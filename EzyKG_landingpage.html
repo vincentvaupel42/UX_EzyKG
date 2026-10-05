@@ -1,0 +1,750 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>EzyKG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+/* Layout concept: left aligned text, one wide ECG review window carries the hero, quiet ruled sections follow, one solid call to action panel closes the page */
+:root {
+  --bg: #F2F6F5;
+  --surface: #FFFFFF;
+  --ink: #13262B;
+  --muted: #4F666C;
+  --line: #D3DEDC;
+  --accent: #0B6E75;
+  --accent-tint: #DCEEEF;
+  --on-accent: #FFFFFF;
+  --alert: #BA3329;
+  --alert-tint: #FBE4E1;
+  --band: rgba(186, 51, 41, 0.09);
+  --paper: #FFFBFA;
+  --grid-minor: #F3DDDF;
+  --grid-major: #E5BCC1;
+  --trace: #14282D;
+  --cell: #E7EEED;
+  --nodata: #C4D0CF;
+  --font-display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  --gutter: clamp(16px, 4vw, 48px);
+  --maxw: 1120px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0A1417;
+    --surface: #111D21;
+    --ink: #E6F0EF;
+    --muted: #9AB0B5;
+    --line: #223439;
+    --accent: #58C6CD;
+    --accent-tint: #12353A;
+    --on-accent: #041417;
+    --alert: #FF7D70;
+    --alert-tint: #2C1A1B;
+    --band: rgba(255, 125, 112, 0.11);
+    --paper: #12191B;
+    --grid-minor: #221D20;
+    --grid-major: #3B2B2F;
+    --trace: #E8F2F1;
+    --cell: #172529;
+    --nodata: #2B3C41;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0A1417;
+  --surface: #111D21;
+  --ink: #E6F0EF;
+  --muted: #9AB0B5;
+  --line: #223439;
+  --accent: #58C6CD;
+  --accent-tint: #12353A;
+  --on-accent: #041417;
+  --alert: #FF7D70;
+  --alert-tint: #2C1A1B;
+  --band: rgba(255, 125, 112, 0.11);
+  --paper: #12191B;
+  --grid-minor: #221D20;
+  --grid-major: #3B2B2F;
+  --trace: #E8F2F1;
+  --cell: #172529;
+  --nodata: #2B3C41;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+h1, h2, h3 { font-family: var(--font-display); margin: 0; line-height: 1.08; letter-spacing: -0.02em; text-wrap: balance; }
+p { margin: 0; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.mono { font-family: var(--font-mono); }
+.wrap { max-width: var(--maxw); margin-inline: auto; padding-inline: var(--gutter); }
+.sec { padding-block: clamp(56px, 9vw, 112px); }
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+h2 { font-size: clamp(1.8rem, 3.8vw, 2.7rem); font-weight: 700; }
+
+/* buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 46px; padding: 0 22px; border-radius: 6px;
+  font-family: var(--font-body); font-size: 1rem; font-weight: 600;
+  text-decoration: none; border: 1.5px solid var(--accent); cursor: pointer;
+}
+.btn.primary { background: var(--accent); color: var(--on-accent); }
+.btn.primary:hover { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn.ghost:hover { background: var(--surface); }
+.btn.inverse { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.btn.inverse:hover { background: var(--bg); color: var(--ink); }
+
+/* top bar */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 20px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-family: var(--font-display); font-weight: 700; font-size: 1.35rem; letter-spacing: -0.02em; }
+.brand svg { width: 28px; height: 28px; color: var(--accent); }
+.top .btn { min-height: 40px; padding: 0 16px; font-size: 0.95rem; }
+
+/* hero */
+.hero { display: flex; flex-direction: column; gap: 22px; padding-block: clamp(36px, 6vw, 72px) 28px; }
+.hero h1 { font-size: clamp(2.5rem, 7vw, 4.9rem); font-weight: 700; max-width: 18ch; }
+.lede { max-width: 58ch; font-size: clamp(1.1rem, 2vw, 1.3rem); color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
+
+/* prototype replica panels */
+.viewer-sec { padding-block: 8px clamp(40px, 6vw, 72px); display: flex; flex-direction: column; gap: 20px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.pbar { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.pbar b { font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; }
+.pbar .meta { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); }
+.pbar .back { font-family: var(--font-mono); font-size: 0.76rem; border: 1px solid var(--line); border-radius: 5px; padding: 2px 10px; color: var(--muted); }
+.readout { font-family: var(--font-mono); font-size: 0.82rem; font-variant-numeric: tabular-nums; min-width: 0; margin-left: auto; }
+.readout .irr { color: var(--alert); font-weight: 500; }
+.sub { color: var(--muted); font-size: 0.92rem; }
+.ov { display: grid; grid-template-columns: minmax(0, 1fr) 17rem; gap: 20px 24px; padding: 18px 16px 16px; }
+.ov h3, .finds h3, .notes h3 { font-size: 1.2rem; font-weight: 600; letter-spacing: -0.01em; }
+.tl-scroll { overflow-x: auto; margin-top: 8px; padding-bottom: 6px; }
+.tl { min-width: 560px; padding-right: 26px; }
+.axis, .row { display: grid; grid-template-columns: 6rem minmax(0, 1fr); align-items: center; }
+.axis .ticks { position: relative; height: 22px; }
+.axis .ticks span { position: absolute; top: 0; left: calc(var(--l) * 1%); transform: translateX(-50%); font-family: var(--font-mono); font-size: 0.68rem; color: var(--muted); }
+.row { margin-top: 12px; }
+.row .d { font-size: 0.9rem; font-weight: 600; }
+.rtrack { position: relative; height: 40px; border-radius: 4px; cursor: crosshair; background:
+  repeating-linear-gradient(90deg, transparent 0, transparent calc(100% / 24 - 1px), var(--line) calc(100% / 24 - 1px), var(--line) calc(100% / 24)), var(--cell); }
+.nodata { position: absolute; top: 0; bottom: 0; left: calc(var(--l) * 1%); width: calc(var(--w) * 1%); background: var(--nodata); opacity: 0.85; pointer-events: none; border-radius: 4px; }
+.sel { position: absolute; top: -5px; bottom: -5px; left: calc(var(--l) * 1%); border-left: 2px solid var(--alert); pointer-events: none; z-index: 1; }
+.mk { position: absolute; top: 50%; left: calc(var(--l) * 1%); width: 28px; height: 28px; margin: -14px 0 0 -14px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-mono); font-size: 0.72rem; line-height: 1; background: var(--muted); color: var(--surface); opacity: 0.6; cursor: pointer; z-index: 2; }
+.mk.tri { background: var(--surface); color: var(--ink); border: 2px solid var(--ink); opacity: 1; }
+.mk.on { opacity: 1; background: var(--ink); color: var(--bg); box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
+.mk.tri.on { background: var(--surface); color: var(--ink); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-top: 14px; font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--ink); }
+.legend i.sw { border-radius: 2px; background: var(--nodata); }
+.legend i.tr { border-radius: 0; background: var(--ink); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.tlmsg { min-height: 1.5em; margin-top: 10px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink); }
+.notes { border: 1px solid var(--line); border-radius: 8px; padding: 14px; align-self: start; }
+.notes ul { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.nitem { width: 100%; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 4px 10px; align-items: center; text-align: left; padding: 9px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font-family: var(--font-body); cursor: pointer; }
+.nitem .num { grid-row: 1 / 3; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-mono); font-size: 0.7rem; background: var(--muted); color: var(--surface); }
+.nitem .t { font-family: var(--font-mono); font-size: 0.78rem; }
+.nitem .skel { height: 6px; border-radius: 3px; background: var(--line); }
+.nitem.on { border: 2px solid var(--ink); padding: 8px 9px; }
+.nitem.on .num { background: var(--ink); color: var(--bg); }
+.nitem.dim { opacity: 0.5; }
+.finds { border-top: 1px solid var(--line); padding: 16px; }
+.finds .sub { margin: 2px 0 12px; }
+.fgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.fcard { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); min-width: 0; }
+.fcard.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.fhead { width: 100%; display: block; text-align: left; padding: 12px 14px 8px; border: 0; background: transparent; color: inherit; font-family: var(--font-body); cursor: pointer; border-radius: 8px; }
+.fhead .ft { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-family: var(--font-display); font-weight: 600; font-size: 1.02rem; }
+.fhead .cnt { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 400; border: 1px solid currentColor; border-radius: 99px; padding: 0 8px; white-space: nowrap; }
+.fhead .fd { display: block; margin-top: 2px; font-size: 0.9rem; opacity: 0.85; }
+.fchips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 12px; }
+.tchip { min-height: 28px; padding: 0 8px; border: 1px solid currentColor; border-radius: 4px; background: transparent; color: inherit; font-family: var(--font-mono); font-size: 0.7rem; cursor: pointer; }
+.tchip.on { background: var(--bg); color: var(--ink); border-color: var(--bg); font-weight: 500; }
+.fcard:not(.on) .tchip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* ECG view */
+.ecgwrap { display: grid; grid-template-columns: minmax(0, 1fr) 16rem; }
+.scroll { overflow-x: auto; min-width: 0; }
+.vbody { position: relative; display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); min-width: 640px; padding-right: 34px; outline-offset: -3px; touch-action: pan-x pan-y; }
+.lab { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-top: 1px solid var(--line); font-family: var(--font-mono); font-size: 0.7rem; line-height: 1.35; color: var(--muted); }
+.lab b { font-family: var(--font-display); font-size: 0.95rem; font-weight: 600; color: var(--ink); }
+.track { position: relative; border-top: 1px solid var(--line); border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+.track svg { display: block; }
+.l1 { grid-area: 1 / 1; border-top: 0; } .t1 { grid-area: 1 / 2; border-top: 0; background: var(--paper); }
+.l2 { grid-area: 2 / 1; } .t2 { grid-area: 2 / 2; }
+.l3 { grid-area: 3 / 1; } .t3 { grid-area: 3 / 2; height: 36px; border-bottom: 0; }
+.layer { grid-area: 1 / 2 / 4 / 3; position: relative; pointer-events: none; z-index: 3; }
+.cursor { position: absolute; top: 0; bottom: 0; left: 50%; width: 0; border-left: 1.5px solid var(--alert); }
+.cursor::before { content: ""; position: absolute; top: 0; left: -6px; width: 11px; height: 11px; border-radius: 50%; background: var(--alert); }
+.gm { stroke: var(--grid-minor); stroke-width: 0.6; fill: none; }
+.gM { stroke: var(--grid-major); stroke-width: 0.9; fill: none; }
+.trace { stroke: var(--trace); stroke-width: 1.35; fill: none; stroke-linejoin: round; stroke-linecap: round; }
+.mid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; fill: none; }
+.motion { stroke: var(--accent); stroke-width: 1.4; fill: none; stroke-linejoin: round; }
+.shade { position: absolute; top: 0; bottom: 0; left: calc(var(--l) * 1%); width: calc(var(--w) * 1%); }
+.shade.alert { background: var(--band); }
+.shade.rest { background: var(--accent-tint); opacity: 0.55; }
+.chip { position: absolute; top: 6px; left: calc(var(--l) * 1% + 8px); padding: 2px 8px; border-radius: 3px; font-family: var(--font-mono); font-size: 0.68rem; line-height: 1.5; white-space: nowrap; background: var(--surface); border: 1px solid var(--line); color: var(--ink); }
+.chip.alert { color: var(--alert); border-color: var(--alert); }
+.tick { position: absolute; top: 8px; left: calc(var(--l) * 1%); transform: translateX(-50%); font-family: var(--font-mono); font-size: 0.66rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tick::before { content: ""; position: absolute; left: 50%; top: -8px; height: 6px; border-left: 1px solid var(--line); }
+.side { padding: 16px; border-left: 1px solid var(--line); display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.side h4 { margin: 0 0 2px; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.side .big { font-family: var(--font-display); font-size: 1.7rem; font-weight: 600; line-height: 1.1; }
+.side .big small { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 400; color: var(--muted); margin-left: 4px; }
+.side svg { display: block; width: 100%; height: 34px; margin-top: 4px; }
+.side .spark { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linejoin: round; }
+.side .nt { font-size: 0.92rem; color: var(--muted); }
+.caption { font-family: var(--font-mono); font-size: 0.76rem; color: var(--muted); }
+
+/* problem and comparison */
+.split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 24px clamp(32px, 6vw, 80px); align-items: start; }
+.split .intro { display: flex; flex-direction: column; gap: 18px; }
+.split .intro p { color: var(--muted); max-width: 52ch; }
+.compare { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.compare th, .compare td { text-align: left; vertical-align: top; padding: 18px 20px 18px 0; border-top: 1px solid var(--line); }
+.compare thead th { font-family: var(--font-mono); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500; color: var(--muted); border-top: 0; padding-top: 0; }
+.compare thead th.us { color: var(--accent); }
+.compare tbody th { width: 17%; font-family: var(--font-display); font-weight: 600; font-size: 1rem; }
+.compare td.was { color: var(--muted); }
+.compare td.us { color: var(--ink); }
+.visually { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* how it works */
+.steps { list-style: none; margin: 48px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 36px 28px; }
+.steps li { display: flex; flex-direction: column; gap: 10px; padding-top: 18px; border-top: 2px solid var(--line); min-width: 0; }
+.steps li:first-child { border-top-color: var(--accent); }
+.steps .n { font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.08em; color: var(--accent); }
+.steps h3 { font-size: 1.45rem; font-weight: 700; }
+.steps p { color: var(--muted); }
+
+/* values */
+.values-head { display: flex; flex-direction: column; gap: 14px; max-width: 60ch; margin-bottom: 40px; }
+.values-head p { color: var(--muted); }
+.tier { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr); gap: 16px 40px; padding-block: 30px; border-top: 1px solid var(--line); }
+.tier > .eyebrow { padding-top: 4px; }
+.tier dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 28px 36px; margin: 0; }
+.tier dl > div { min-width: 0; }
+.tier dt { font-family: var(--font-display); font-weight: 600; font-size: 1.2rem; letter-spacing: -0.01em; }
+.tier dd { margin: 6px 0 0; color: var(--muted); }
+
+/* audience */
+.who-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 40px clamp(32px, 6vw, 80px); margin-top: 40px; }
+.who-grid > div { display: flex; flex-direction: column; gap: 10px; min-width: 0; padding-top: 18px; border-top: 2px solid var(--line); }
+.who-grid h3 { font-size: 1.5rem; font-weight: 700; }
+.who-grid p { color: var(--muted); max-width: 46ch; }
+
+/* call to action */
+.cta { background: var(--accent); color: var(--on-accent); border-radius: 12px; padding: clamp(28px, 5vw, 60px); display: flex; flex-direction: column; gap: 16px; }
+.cta h2 { max-width: 20ch; }
+.cta p { max-width: 54ch; }
+.cform { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-top: 14px; }
+.cform .field { display: flex; flex-direction: column; gap: 6px; flex: 1 1 260px; max-width: 420px; min-width: 0; }
+.cform label { font-family: var(--font-mono); font-size: 0.76rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.cform input { min-height: 48px; padding: 0 14px; border-radius: 6px; border: 1.5px solid transparent; background: var(--surface); color: var(--ink); font-family: var(--font-body); font-size: 1rem; width: 100%; }
+.cta :focus-visible { outline-color: var(--on-accent); }
+.cta .note { font-family: var(--font-mono); font-size: 0.78rem; opacity: 0.9; }
+.cta .msg { min-height: 1.6em; font-weight: 600; }
+.foot { border-top: 1px solid var(--line); padding-block: 36px; color: var(--muted); font-size: 0.92rem; }
+.foot p { max-width: 70ch; }
+
+@media (max-width: 860px) {
+  .ov, .ecgwrap { grid-template-columns: minmax(0, 1fr); }
+  .side { border-left: 0; border-top: 1px solid var(--line); }
+  .split { grid-template-columns: minmax(0, 1fr); }
+  .tier { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+}
+@media (max-width: 640px) {
+  .compare thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .compare, .compare tbody, .compare tr, .compare th, .compare td { display: block; width: auto; }
+  .compare tbody th { width: auto; padding: 18px 0 4px; border-top: 1px solid var(--line); }
+  .compare td { border-top: 0; padding: 4px 0 10px; }
+  .compare td::before { content: attr(data-label); display: block; font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 2px; }
+  .compare td.us::before { color: var(--accent); }
+}
+</style>
+
+<header class="top wrap">
+  <a class="brand" href="#top" aria-label="EzyKG home">
+    <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 15h6l2.5-8 4 15 3-11 1.8 4h7.7"/></svg>
+    EzyKG
+  </a>
+  <a class="btn primary" href="#demo">Request a demo</a>
+</header>
+
+<main id="top">
+  <section class="hero wrap" aria-labelledby="hero-title">
+    <p class="eyebrow">For heart doctors who review Holter recordings</p>
+    <h1 id="hero-title">Every symptom, lined up with the heartbeat behind it.</h1>
+    <p class="lede">EzyKG shows the whole measurement period on one timeline, with the patient's own notes and everything the system found in the ECG and movement. Open any moment to see the ECG, pulse, activity and body position from the same minutes.</p>
+    <div class="actions">
+      <a class="btn primary" href="#demo">Request a demo</a>
+      <a class="btn ghost" href="#how">See how it works</a>
+    </div>
+  </section>
+
+  <section class="viewer-sec wrap" aria-label="Interactive example based on the prototype">
+    <p class="caption">Try it. Tap a finding, a note or any spot on the timeline. All data is simulated.</p>
+
+    <div class="panel">
+      <div class="pbar">
+        <span class="back" aria-hidden="true">← Patients</span>
+        <b>John Doe</b>
+        <span class="meta">Recording Oct 12 to 15 · 72 hours</span>
+      </div>
+      <div class="ov">
+        <div>
+          <h3>Overview of the recording</h3>
+          <p class="sub">Click anywhere on the timeline to see all measurements from that time.</p>
+          <div class="tl-scroll"><div class="tl" id="tl"></div></div>
+          <div class="legend">
+            <span><i class="sw"></i>Grey area = no recording</span>
+            <span><i></i>Patient note</span>
+            <span><i class="tr"></i>Found by the system, no patient note</span>
+          </div>
+          <p class="tlmsg" id="tlmsg" role="status"></p>
+        </div>
+        <aside class="notes" aria-labelledby="notes-h">
+          <h3 id="notes-h">Patient notes (5)</h3>
+          <p class="sub">Details designed later</p>
+          <ul id="nlist"></ul>
+        </aside>
+      </div>
+      <div class="finds">
+        <h3>Found in the recording</h3>
+        <p class="sub">Calculated automatically from ECG and movement, also where the patient did not write anything</p>
+        <div class="fgrid" id="fgrid"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="pbar">
+        <b id="ecgtitle">ECG</b>
+        <span class="meta" id="ecgmeta"></span>
+        <span class="readout" id="readout"></span>
+      </div>
+      <div class="ecgwrap">
+        <div class="scroll">
+          <div class="vbody" id="vbody" tabindex="0" role="group" aria-label="Simulated ECG for the selected moment. Move the pointer over it or use the left and right arrow keys to move the time cursor.">
+            <div class="lab l1"><b>ECG</b><span>25 mm/s</span><span>10 mm/mV</span></div>
+            <div class="track t1" id="t-ecg">
+              <svg id="svg-ecg" aria-hidden="true"></svg>
+              <div id="ecg-over"></div>
+            </div>
+            <div class="lab l2"><b>Activity</b><span>Accelerometer</span></div>
+            <div class="track t2" id="t-acc">
+              <svg id="svg-acc" aria-hidden="true"></svg>
+              <div id="acc-over"></div>
+            </div>
+            <div class="lab l3"><span>Time</span></div>
+            <div class="track t3" id="t-time"></div>
+            <div class="layer" id="layer"><div class="cursor" id="cursor" style="left:50%"></div></div>
+          </div>
+        </div>
+        <div class="side" id="side" aria-live="polite"></div>
+      </div>
+    </div>
+    <p class="caption">The prototype shows a full minute of ECG per line. This page shows 10 seconds at true scale. Simulated recording for illustration. Not patient data.</p>
+  </section>
+
+  <section class="sec wrap" id="problem" aria-labelledby="problem-title">
+    <div class="split">
+      <div class="intro">
+        <p class="eyebrow">The problem today</p>
+        <h2 id="problem-title">Matching a paper diary to a screen is slow work.</h2>
+        <p>A 12 lead Holter monitor is worn for 3 to 4 days. The patient writes symptoms and activities in a paper diary. Afterwards the doctor reviews the ECG in a desktop application and has to find each diary entry in the recording.</p>
+      </div>
+      <table class="compare">
+        <thead>
+          <tr><th scope="col"><span class="visually">Topic</span></th><th scope="col">Holter and paper diary</th><th scope="col" class="us">EzyKG</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Wearing it</th>
+            <td class="was" data-label="Holter and paper diary">A bulky recorder with wires on the chest.</td>
+            <td class="us" data-label="EzyKG">One small chest patch that records ECG, motion and rotation.</td>
+          </tr>
+          <tr>
+            <th scope="row">Patient notes</th>
+            <td class="was" data-label="Holter and paper diary">Written by hand in a paper diary.</td>
+            <td class="us" data-label="EzyKG">Tapped into a phone app and timestamped automatically.</td>
+          </tr>
+          <tr>
+            <th scope="row">Finding the moment</th>
+            <td class="was" data-label="Holter and paper diary">The doctor reads the diary, then searches the recording for each entry.</td>
+            <td class="us" data-label="EzyKG">Notes sit on the ECG timeline at the minute they were made.</td>
+          </tr>
+          <tr>
+            <th scope="row">Activity</th>
+            <td class="was" data-label="Holter and paper diary">Only what the patient remembered to write down.</td>
+            <td class="us" data-label="EzyKG">Activity and body position come from the motion sensors, so rest and movement show without a note.</td>
+          </tr>
+          <tr>
+            <th scope="row">Unnoticed events</th>
+            <td class="was" data-label="Holter and paper diary">Missed unless the patient felt something and wrote it down.</td>
+            <td class="us" data-label="EzyKG">Findings such as irregular pulse or high pulse on exertion are calculated automatically, also where the patient wrote nothing.</td>
+          </tr>
+          <tr>
+            <th scope="row">Device status</th>
+            <td class="was" data-label="Holter and paper diary">Hard for the patient to tell whether it is recording.</td>
+            <td class="us" data-label="EzyKG">The app shows whether the patch is connected and recording.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec wrap" id="how" aria-labelledby="how-title" style="padding-top:0">
+    <p class="eyebrow">How it works</p>
+    <h2 id="how-title" style="margin-top:14px;max-width:22ch">From the patient's chest to the doctor's screen.</h2>
+    <ol class="steps">
+      <li>
+        <span class="n">1</span>
+        <h3>Wear</h3>
+        <p>A light patch records ECG, motion and rotation, with a timestamp on every sample.</p>
+      </li>
+      <li>
+        <span class="n">2</span>
+        <h3>Note</h3>
+        <p>The patient's phone receives the stream over Bluetooth. Symptoms and activities are tapped in as they happen, and short check ins ask for more detail.</p>
+      </li>
+      <li>
+        <span class="n">3</span>
+        <h3>Sync</h3>
+        <p>The phone sends everything to a cloud service that stores the data and prepares it for review.</p>
+      </li>
+      <li>
+        <span class="n">4</span>
+        <h3>Review</h3>
+        <p>The doctor picks a patient who is ready for review and gets an overview of the whole period. Patient notes and automatic findings sit on the same timeline, and one tap opens the ECG for that moment.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section class="sec wrap" id="values" aria-labelledby="values-title" style="padding-top:0">
+    <div class="values-head">
+      <p class="eyebrow">What the doctor gets back</p>
+      <h2 id="values-title">Less matching, more diagnosing.</h2>
+      <p>EzyKG is built around a short list of things that matter to a heart doctor and to the patient wearing the patch.</p>
+    </div>
+    <div class="tier">
+      <p class="eyebrow">Functional</p>
+      <dl>
+        <div><dt>Saves time</dt><dd>The overview shows where to look, so nobody scrolls through 72 hours of ECG to find the minute a symptom happened.</dd></div>
+        <div><dt>Organizes</dt><dd>Patient notes, findings, activity and body position live on one timeline, and the ECG for the same time span is one tap away.</dd></div>
+        <div><dt>Integrates</dt><dd>ECG, motion and notes from three sources arrive as one record.</dd></div>
+        <div><dt>Informs</dt><dd>Findings point to rhythm changes that the patient did not write down, for example an irregular pulse mostly at night. The system points and the doctor decides.</dd></div>
+        <div><dt>Reduces effort</dt><dd>No diary pages to read and no handwriting to decipher.</dd></div>
+        <div><dt>Avoids hassles</dt><dd>A small patch replaces a bulky monitor with wires.</dd></div>
+      </dl>
+    </div>
+    <div class="tier">
+      <p class="eyebrow">Emotional</p>
+      <dl>
+        <div><dt>Reduces anxiety</dt><dd>Patients can see that the patch is working. Doctors see every finding listed with the times it happened.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="sec wrap" id="for" aria-labelledby="for-title" style="padding-top:0">
+    <p class="eyebrow">Who it is for</p>
+    <h2 id="for-title" style="margin-top:14px;max-width:22ch">Made for the people who read the recording.</h2>
+    <div class="who-grid">
+      <div>
+        <h3>Heart doctors and their clinics</h3>
+        <p>Clinics that diagnose atrial fibrillation and review Holter data. If a handwritten diary has ever sat next to your screen while you scrolled for one minute of ECG, EzyKG was designed for that moment.</p>
+      </div>
+      <div>
+        <h3>Patients with possible atrial fibrillation</h3>
+        <p>Adults from 40 to 65 who use a smartphone regularly. The app asks for little and works the way other apps do, so notes get made when something happens.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec wrap" id="demo" aria-labelledby="demo-title" style="padding-top:0">
+    <div class="cta">
+      <p class="eyebrow" style="color:inherit;opacity:.85">Next step</p>
+      <h2 id="demo-title">See a recording reviewed in EzyKG.</h2>
+      <p>Leave an email address to book a short walkthrough of the review window with a sample recording.</p>
+      <form class="cform" id="cform" novalidate>
+        <div class="field">
+          <label for="email">Work email</label>
+          <input id="email" name="email" type="email" autocomplete="email" placeholder="name@clinic.dk" required>
+        </div>
+        <button class="btn inverse" type="submit">Request a demo</button>
+      </form>
+      <p class="msg" id="cmsg" role="status"></p>
+      <p class="note">Prototype page. Nothing is sent or stored.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p>EzyKG is a student concept made for DTU course 02810 UX Design Prototyping. It builds on the REAFEL research project on reaching frail elderly patients for better diagnosis of atrial fibrillation. The ECG shown on this page is simulated.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var DUR = 10, SR = 250;
+  var $ = function (id) { return document.getElementById(id); };
+  var DAYS = ['Mon Oct 12', 'Tue Oct 13', 'Wed Oct 14', 'Thu Oct 15'];
+  var SHORT = ['Mon', 'Tue', 'Wed', 'Thu'];
+  var NODATA = [[0, 0, 10], [3, 10, 24]];
+  var AXIS = ['00:00', '06:00', '12:00', '18:00', '24:00'];
+
+  /* Simulated moments. rr is the mean RR interval in seconds. af means irregular rhythm without P waves. */
+  var EV = [
+    { id: 'a', day: 0, h: 15 + 0 / 60, note: 1, af: false, rr: 0.48, move: true, pos: 'Walking' },
+    { id: 'b', day: 0, h: 23 + 42 / 60, note: 2, af: true, rr: 0.75, move: false, pos: 'Lying down' },
+    { id: 'c', day: 1, h: 14 + 31 / 60, note: 3, af: true, rr: 0.5, move: true, pos: 'Climbing stairs' },
+    { id: 'd', day: 1, h: 23 + 5 / 60, note: 0, af: true, rr: 0.8, move: false, pos: 'Lying down' },
+    { id: 'e', day: 2, h: 2 + 40 / 60, note: 0, af: true, rr: 0.85, move: false, pos: 'Lying down' },
+    { id: 'f', day: 2, h: 18 + 24 / 60, note: 4, af: false, rr: 0.85, move: false, pos: 'Sitting' },
+    { id: 'g', day: 3, h: 2 + 15 / 60, note: 5, af: false, rr: 1.05, move: false, pos: 'Lying down' }
+  ];
+  var FIND = [
+    { id: 'f1', t: 'Irregular pulse', cnt: '4 times', d: '2 of them without a patient note', ev: ['b', 'c', 'd', 'e'] },
+    { id: 'f2', t: 'High pulse during exertion', cnt: '2 times', d: 'Pulse above 120 on stairs and walking', ev: ['a', 'c'] },
+    { id: 'f3', t: 'Mostly at night', cnt: '3 of 4', d: 'Irregular pulse between 23:00 and 03:00', ev: ['b', 'd', 'e'] }
+  ];
+  var byId = {}; EV.forEach(function (e, i) { e.i = i; byId[e.id] = e; });
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function hm(h) { var m = Math.round(h * 60); return pad(Math.floor(m / 60) % 24) + ':' + pad(m % 60); }
+  function label(e) { return SHORT[e.day] + ' ' + hm(e.h); }
+  function rng(seed) { var a = seed >>> 0; return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function noData(day, h) { return NODATA.some(function (n) { return n[0] === day && h >= n[1] && h < n[2]; }); }
+
+  var sel = null, hl = null, cfg = null;
+
+  /* ---------- overview timeline ---------- */
+  var tl = $('tl');
+  var html = '<div class="axis"><span></span><div class="ticks">' + AXIS.map(function (a, i) { return '<span style="--l:' + (i * 25) + '">' + a + '</span>'; }).join('') + '</div></div>';
+  DAYS.forEach(function (d, day) {
+    html += '<div class="row"><span class="d">' + d + '</span><div class="rtrack" data-day="' + day + '">';
+    NODATA.forEach(function (n) { if (n[0] === day) html += '<div class="nodata" style="--l:' + (n[1] / 24 * 100) + ';--w:' + ((n[2] - n[1]) / 24 * 100) + '"></div>'; });
+    EV.forEach(function (e) {
+      if (e.day !== day) return;
+      if (e.note) html += '<button type="button" class="mk" data-ev="' + e.id + '" style="--l:' + (e.h / 24 * 100) + '" aria-label="Patient note ' + e.note + ', ' + label(e) + '">' + e.note + '</button>';
+      else html += '<button type="button" class="mk tri" data-ev="' + e.id + '" style="--l:' + (e.h / 24 * 100) + '" aria-label="Found by the system, ' + label(e) + '">▲</button>';
+    });
+    html += '</div></div>';
+  });
+  tl.innerHTML = html;
+
+  /* ---------- notes list and findings ---------- */
+  var nlist = $('nlist');
+  nlist.innerHTML = EV.filter(function (e) { return e.note; }).sort(function (a, b) { return a.note - b.note; }).map(function (e) {
+    return '<li><button type="button" class="nitem" data-ev="' + e.id + '"><span class="num">' + e.note + '</span><span class="t">' + label(e) + '</span><span class="skel"></span></button></li>';
+  }).join('');
+
+  var fgrid = $('fgrid');
+  fgrid.innerHTML = FIND.map(function (f) {
+    return '<div class="fcard" data-f="' + f.id + '"><button type="button" class="fhead" aria-pressed="false"><span class="ft"><span>' + f.t + '</span><span class="cnt">' + f.cnt + '</span></span><span class="fd">' + f.d + '</span></button><div class="fchips">' +
+      f.ev.map(function (id) { return '<button type="button" class="tchip" data-ev="' + id + '">' + label(byId[id]) + '</button>'; }).join('') + '</div></div>';
+  }).join('');
+
+  /* ---------- ECG strip ---------- */
+  var tEcg = $('t-ecg'), tAcc = $('t-acc'), svgEcg = $('svg-ecg'), svgAcc = $('svg-acc');
+  var layer = $('layer'), cursor = $('cursor'), vbody = $('vbody'), readout = $('readout');
+  var peaks = [], curT = 5;
+
+  function makeCfg() {
+    var e = sel.ev, c;
+    if (e) { c = { af: e.af, rr: e.rr, move: e.move, pos: e.pos, seed: e.i * 17 + 3 }; }
+    else {
+      var night = sel.h >= 23 || sel.h < 7;
+      c = { af: false, rr: night ? 1.05 : 0.85, move: false, pos: night ? 'Lying down' : 'Sitting', seed: Math.round(sel.h * 100) + sel.day * 7 };
+    }
+    var r = rng(c.seed), t = 0.25 + r() * 0.25;
+    c.peaks = [];
+    while (t < DUR + 1) {
+      c.peaks.push(t);
+      t += c.af ? c.rr * (0.6 + 0.95 * r()) : c.rr * (1 + (r() - 0.5) * 0.06);
+    }
+    c.r = rng(c.seed + 99);
+    return c;
+  }
+
+  function g(t, mu, s, a) { var d = (t - mu) / s; return a * Math.exp(-d * d / 2); }
+  function ecg(t) {
+    var v = 0, i, dt, P = cfg.peaks;
+    for (i = 0; i < P.length; i++) {
+      dt = t - P[i];
+      if (dt < -0.4 || dt > 0.6) continue;
+      if (!cfg.af) v += g(dt, -0.17, 0.035, 0.14);
+      v += g(dt, -0.03, 0.011, -0.13) + g(dt, 0, 0.013, 1.15) + g(dt, 0.032, 0.013, -0.25) + g(dt, 0.27, 0.055, 0.30);
+    }
+    if (cfg.af) v += 0.045 * Math.sin(2 * Math.PI * 6.1 * t + 0.7) + 0.035 * Math.sin(2 * Math.PI * 8.7 * t + 2.1) + 0.02 * Math.sin(2 * Math.PI * 11.3 * t);
+    v += 0.03 * Math.sin(2 * Math.PI * 0.3 * t);
+    if (cfg.move) v += 0.035 * Math.sin(2 * Math.PI * 17 * t) + 0.02 * Math.sin(2 * Math.PI * 23 * t + 1) + 0.05 * Math.sin(2 * Math.PI * 1.8 * t);
+    else v += 0.006 * Math.sin(2 * Math.PI * 19 * t);
+    return v;
+  }
+  function motion(t) {
+    if (cfg.move) return 0.55 * Math.sin(2 * Math.PI * 1.8 * t) + 0.25 * Math.sin(2 * Math.PI * 3.6 * t + 1);
+    return 0.02 * Math.sin(2 * Math.PI * 13 * t + t * t);
+  }
+
+  function render() {
+    var W = Math.floor(tEcg.clientWidth - 2);
+    if (W < 100 || !cfg) return;
+    var mm = W / 250, H = Math.round(44 * mm), minor = '', major = '', i, j, x, y, k;
+    for (i = 0; i <= 250; i++) { x = (i * mm).toFixed(2); if (i % 5 === 0) major += 'M' + x + ' 0V' + H; else minor += 'M' + x + ' 0V' + H; }
+    for (j = 0; j * mm <= H; j++) { y = (j * mm).toFixed(2); if (j % 5 === 0) major += 'M0 ' + y + 'H' + W; else minor += 'M0 ' + y + 'H' + W; }
+    var base = 30 * mm, d = '', N = DUR * SR;
+    for (k = 0; k <= N; k++) { var t = k / SR; d += (k ? 'L' : 'M') + (t * W / DUR).toFixed(1) + ' ' + (base - ecg(t) * 10 * mm).toFixed(1); }
+    svgEcg.setAttribute('viewBox', '0 0 ' + W + ' ' + H); svgEcg.setAttribute('width', W); svgEcg.setAttribute('height', H);
+    svgEcg.innerHTML = '<path class="gm" d="' + minor + '"/><path class="gM" d="' + major + '"/><path class="trace" d="' + d + '"/>';
+    tEcg.style.height = H + 'px';
+    var H2 = Math.max(60, Math.round(15 * mm)), m = '';
+    for (k = 0; k <= N; k++) { var t2 = k / SR; m += (k ? 'L' : 'M') + (t2 * W / DUR).toFixed(1) + ' ' + (H2 / 2 - motion(t2) * H2 * 0.46).toFixed(1); }
+    svgAcc.setAttribute('viewBox', '0 0 ' + W + ' ' + H2); svgAcc.setAttribute('width', W); svgAcc.setAttribute('height', H2);
+    svgAcc.innerHTML = '<path class="mid" d="M0 ' + (H2 / 2) + 'H' + W + '"/><path class="motion" d="' + m + '"/>';
+    tAcc.style.height = H2 + 'px';
+  }
+
+  function setT(t) {
+    t = Math.max(0, Math.min(DUR, t));
+    cursor.style.left = (t / DUR * 100) + '%';
+    var P = cfg.peaks, j = 0;
+    for (var i = 0; i < P.length - 1; i++) { if (t >= P[i]) j = i; }
+    var rr = (P[j + 1] - P[j]) * 1000;
+    readout.innerHTML = Math.round(rr) + ' ms · ' + Math.round(60000 / rr) + ' bpm · ' + (cfg.af ? '<span class="irr">Irregular</span>' : 'Regular');
+    return t;
+  }
+
+  function spark(vals, lo, hi) {
+    var w = 120, h = 34, p = vals.map(function (v, i) { return (i ? 'L' : 'M') + (i * w / (vals.length - 1)).toFixed(1) + ' ' + (h - 3 - (v - lo) / (hi - lo) * (h - 6)).toFixed(1); }).join('');
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" aria-hidden="true"><path class="spark" d="' + p + '"/></svg>';
+  }
+
+  function drawStrip() {
+    var e = sel.ev, mins = Math.round(sel.h * 60), stamp = hm(mins / 60);
+    $('ecgtitle').textContent = 'John Doe · ' + DAYS[sel.day] + ' at ' + stamp;
+    $('ecgmeta').textContent = e ? (e.note ? 'Patient note ' + e.note : 'Found by the system') : 'Chosen on the timeline';
+    var ticks = '';
+    for (var s = 0; s <= DUR; s += 2) ticks += '<span class="tick" style="--l:' + (s * 10) + '">' + stamp + ':' + pad(s) + '</span>';
+    $('t-time').innerHTML = ticks;
+    $('ecg-over').innerHTML = cfg.af ? '<div class="shade alert" style="--l:0;--w:100"></div><span class="chip alert" style="--l:0">Irregular RR, no P waves</span>' : '<span class="chip" style="--l:0">Regular rhythm with P waves</span>';
+    $('acc-over').innerHTML = (cfg.move ? '' : '<div class="shade rest" style="--l:0;--w:100"></div>') + '<span class="chip" style="--l:0">' + cfg.pos + '</span>';
+
+    var P = cfg.peaks.filter(function (p) { return p >= 0 && p <= DUR; }), mean = (P[P.length - 1] - P[0]) / (P.length - 1);
+    var bpm = Math.round(60 / mean), r = cfg.r, pv = [], av = [], i;
+    for (i = 0; i < 24; i++) {
+      pv.push(bpm + (r() - 0.5) * 2 * (cfg.af ? 9 : 3));
+      av.push(cfg.move ? 0.55 + r() * 0.4 : 0.03 + r() * 0.1);
+    }
+    var note = e ? (e.note ? 'Patient note ' + e.note + ' falls in this period.' : 'No patient note. Found by the system.') : 'No patient note in this period.';
+    $('side').innerHTML =
+      '<div><h4>Same time period</h4><p class="nt">' + SHORT[sel.day] + ' around ' + stamp + '</p></div>' +
+      '<div><h4>Pulse (bpm)</h4><div class="big">' + bpm + '<small>bpm</small></div>' + spark(pv, bpm - 14, bpm + 14) + '</div>' +
+      '<div><h4>Activity (accelerometer)</h4>' + spark(av, 0, 1) + '</div>' +
+      '<div><h4>Body position</h4><div class="big" style="font-size:1.25rem">' + cfg.pos + '</div></div>' +
+      '<div><h4>Patient note in this period</h4><p class="nt">' + note + '</p></div>';
+  }
+
+  /* ---------- state and updates ---------- */
+  function inHl(e) { return hl && FIND.filter(function (f) { return f.id === hl; })[0].ev.indexOf(e.id) > -1; }
+
+  function paint() {
+    Array.prototype.forEach.call(document.querySelectorAll('.mk'), function (b) {
+      var e = byId[b.getAttribute('data-ev')];
+      b.classList.toggle('on', sel.ev === e || inHl(e));
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.nitem'), function (b) {
+      var e = byId[b.getAttribute('data-ev')];
+      b.classList.toggle('on', sel.ev === e || inHl(e));
+      b.classList.toggle('dim', !!hl && !inHl(e) && sel.ev !== e);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.fcard'), function (c) {
+      var on = c.getAttribute('data-f') === hl;
+      c.classList.toggle('on', on);
+      c.querySelector('.fhead').setAttribute('aria-pressed', on ? 'true' : 'false');
+      Array.prototype.forEach.call(c.querySelectorAll('.tchip'), function (b) { b.classList.toggle('on', sel.ev === byId[b.getAttribute('data-ev')]); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.sel'), function (n) { n.parentNode.removeChild(n); });
+    var row = tl.querySelector('.rtrack[data-day="' + sel.day + '"]');
+    var s = document.createElement('div'); s.className = 'sel'; s.style.setProperty('--l', sel.h / 24 * 100); row.appendChild(s);
+    $('tlmsg').textContent = 'Selected time ' + SHORT[sel.day] + ' ' + hm(sel.h);
+    cfg = makeCfg();
+    drawStrip(); render();
+    curT = setT(5);
+  }
+
+  function pickEvent(id) { var e = byId[id]; sel = { day: e.day, h: e.h, ev: e }; paint(); }
+
+  tl.addEventListener('click', function (ev) {
+    var mk = ev.target.closest('.mk');
+    if (mk) { pickEvent(mk.getAttribute('data-ev')); return; }
+    var tr = ev.target.closest('.rtrack');
+    if (!tr) return;
+    var r = tr.getBoundingClientRect(), day = +tr.getAttribute('data-day'), h = (ev.clientX - r.left) / r.width * 24;
+    h = Math.max(0, Math.min(23.99, h));
+    if (noData(day, h)) { $('tlmsg').textContent = 'No recording in this period (' + SHORT[day] + ' ' + hm(h) + ')'; return; }
+    var near = null;
+    EV.forEach(function (e) { if (e.day === day && Math.abs(e.h - h) < 0.75 && (!near || Math.abs(e.h - h) < Math.abs(near.h - h))) near = e; });
+    if (near) pickEvent(near.id); else { sel = { day: day, h: h, ev: null }; paint(); }
+  });
+  nlist.addEventListener('click', function (ev) { var b = ev.target.closest('.nitem'); if (b) pickEvent(b.getAttribute('data-ev')); });
+  fgrid.addEventListener('click', function (ev) {
+    var chip = ev.target.closest('.tchip');
+    if (chip) { pickEvent(chip.getAttribute('data-ev')); return; }
+    var head = ev.target.closest('.fhead');
+    if (!head) return;
+    var id = head.parentNode.getAttribute('data-f');
+    hl = hl === id ? null : id;
+    if (hl) { var f = FIND.filter(function (x) { return x.id === hl; })[0]; pickEvent(f.ev[0]); } else paint();
+  });
+
+  function fromPointer(e) {
+    var r = layer.getBoundingClientRect();
+    if (r.width <= 0) return;
+    curT = setT(((e.clientX - r.left) / r.width) * DUR);
+  }
+  vbody.addEventListener('pointermove', function (e) { if (e.pointerType !== 'touch') fromPointer(e); });
+  vbody.addEventListener('pointerdown', fromPointer);
+  vbody.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight') { curT = setT(curT + 0.25); e.preventDefault(); }
+    if (e.key === 'ArrowLeft') { curT = setT(curT - 0.25); e.preventDefault(); }
+  });
+
+  var form = $('cform'), email = $('email'), msg = $('cmsg');
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!email.value || email.value.indexOf('@') < 1) { msg.textContent = 'Enter an email address that includes an @ sign.'; email.focus(); return; }
+    msg.textContent = 'Nothing was sent. This is a prototype page, so no address is stored.';
+  });
+
+  hl = 'f1';
+  pickEvent('b');
+  if (window.ResizeObserver) {
+    var last = 0;
+    new ResizeObserver(function () { var w = tEcg.clientWidth; if (Math.abs(w - last) > 1) { last = w; render(); } }).observe(tEcg);
+  } else { window.addEventListener('resize', render); }
+})();
+</script>
+
+</body></html>
